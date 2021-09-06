@@ -1,16 +1,46 @@
 import sys
-
+import time
 # srcipt.py target-file hexstring
 
-# get hexstring: xxd -p file | tr -d '\n'
+
+def write_to_file(data):
+    f = open(filename, 'wb')
+    f.write(data)
+    f.close()
+
+
+# get hexstring: xxd -p file | tr -d '\n'4
 filename = sys.argv[1]
 hexadecimal_string = sys.argv[2]
 parsed_hexadecimal_string = ""
+
+first_part_without_x = None
+try:
+    first_x_index = hexadecimal_string.index("\\x")
+    if first_x_index == 0:
+        # do nothing, starts with \\x wont cause problems
+        time.sleep(0.1)
+    else:
+        first_part = hexadecimal_string[:first_x_index]
+        first_part_without_x = first_part
+
+except ValueError:
+    write_to_file(bytes(hexadecimal_string, "utf-8"))
+    exit(0)
+
 parts = hexadecimal_string.split("\\x")
-index = 0
+
+parts_index = 0
 skip = False
+
 for part in parts:
+    parts_index += 1
     if part == "":
+        continue
+    if parts_index == 1 and first_part_without_x:
+        for c in first_part_without_x:
+            hex_c = hex(ord(c)).replace("0x", "")
+            parsed_hexadecimal_string += hex_c
         continue
     parsed_hexadecimal_string += part[:2]
     for i in range(len(part)-2):
@@ -46,6 +76,4 @@ for part in parts:
         parsed_hexadecimal_string += unparsed
 
 data = bytearray.fromhex(parsed_hexadecimal_string)
-f = open(filename, 'wb')
-f.write(data)
-f.close()
+write_to_file(data)
